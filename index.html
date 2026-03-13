@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Bibliothèque Futuriste 5.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Orbitron', sans-serif; background: linear-gradient(135deg, #0b0c10, #1f2833); color: #c5c6c7; padding: 20px; max-width: 800px; margin: auto;}
+h1 { text-align: center; color: #00fff7; letter-spacing: 2px; margin-bottom: 20px; }
+input, select, button { margin:5px 0; padding:8px; width:100%; border:none; border-radius:8px; outline:none; background:#1c1f27; color:#c5c6c7; font-size:1em; }
+button { background:#00fff7; color:#0b0c10; font-weight:bold; cursor:pointer; transition:0.3s; }
+button:hover { background:#00c0b0; color:#fff; }
+ul { padding:0; }
+li { background:#1c1f27; margin:8px 0; padding:15px; border-radius:12px; display:flex; flex-direction:column; box-shadow:0 0 15px #00fff7; }
+li span { font-weight:bold; }
+li .buttons { margin-top:8px; display:flex; flex-wrap:wrap; }
+li button.small { width:auto; margin:5px 5px 0 0; padding:5px 10px; font-size:0.9em; border-radius:6px; }
+.disponible { color:#0ff; font-weight:bold; }
+.emprunte { color:#f00; font-weight:bold; }
+
+#notif { position: fixed; top: 20px; right: 20px; background: rgba(0,255,255,0.2); backdrop-filter: blur(10px); color: #00fff7; padding: 15px 20px; border-radius: 12px; box-shadow: 0 0 20px #00fff7; display: none; font-weight: bold; animation: fadein 0.5s, fadeout 0.5s 2.5s; z-index:999; }
+@keyframes fadein { from {opacity:0} to {opacity:1} }
+@keyframes fadeout { from {opacity:1} to {opacity:0} }
+
+.tab { display: none; }
+.tab-buttons { display:flex; justify-content:center; margin-bottom:15px; }
+.tab-buttons button { width:auto; margin:0 5px; }
+.tab-active { display:block; }
+
+label { margin-top:5px; }
+</style>
+</head>
+<body>
+
+<h1>Bibliothèque Futuriste</h1>
+<div id="notif"></div>
+
+<div class="tab-buttons">
+  <button onclick="ouvrirTab('bibliotheque')">Bibliothèque</button>
+  <button onclick="ouvrirTab('emprunts')">Emprunts</button>
+</div>
+
+<div id="bibliotheque" class="tab tab-active">
+<h2>Ajouter un livre</h2>
+<input id="numero" placeholder="Numéro">
+<input id="titre" placeholder="Nom du livre">
+<input id="auteur" placeholder="Auteur">
+<input id="annee" placeholder="Année">
+<input id="edition" placeholder="Édition">
+<select id="langue">
+<option>Français</option>
+<option>Russe</option>
+<option>Anglais</option>
+<option>Autre</option>
+</select>
+<input id="emplacement" placeholder="Emplacement (ex: Étagère 2 / Case 3)">
+<input id="code" placeholder="Code secret">
+<button onclick="ajouterLivre()">Ajouter</button>
+
+<h2>Rechercher un livre</h2>
+<input id="recherche" placeholder="Numéro, titre ou auteur" oninput="afficherLivres()">
+
+<h2>Livres</h2>
+<ul id="liste"></ul>
+</div>
+
+<div id="emprunts" class="tab">
+<h2>Historique des emprunts</h2>
+<ul id="listeEmprunts"></ul>
+</div>
+
+<script>
+let livres = JSON.parse(localStorage.getItem("livres")) || [];
+const codeSecret = "1234";
+
+function notifier(message){
+    const n=document.getElementById("notif");
+    n.textContent=message;
+    n.style.display="block";
+    setTimeout(()=>{ n.style.display="none"; },3000);
+}
+
+function ouvrirTab(id){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));
+    document.getElementById(id).classList.add('tab-active');
+    if(id==='emprunts') afficherEmprunts();
+}
+
+function afficherLivres(){
+    const liste=document.getElementById("liste");
+    const filtre=document.getElementById("recherche").value.toLowerCase();
+    liste.innerHTML="";
+    livres.forEach((livre,index)=>{
+        if(livre.numero.toLowerCase().includes(filtre) || livre.titre.toLowerCase().includes(filtre) || livre.auteur.toLowerCase().includes(filtre)){
+            let li=document.createElement("li");
+            li.innerHTML=`
+                <span>${livre.numero} - ${livre.titre}</span>
+                <small>${livre.auteur}, ${livre.annee}, ${livre.edition}</small>
+                <small>Langue: ${livre.langue} | Emplacement: ${livre.emplacement}</small>
+                <span class="${livre.statut==='Disponible'?'disponible':'emprunte'}">${livre.statut}</span>
+                <div class="buttons">
+                    ${livre.statut==='Disponible'?`<button class="small" onclick="ouvrirEmprunt(${index})">Emprunter</button>`:`<button class="small" onclick="rendreLivre(${index})">Rendre</button>`}
+                    <button class="small" onclick="popupSupprimer(${index})">Supprimer</button>
+                </div>
+            `;
+            liste.appendChild(li);
+        }
+    });
+}
+
+function afficherEmprunts(){
+    const liste=document.getElementById("listeEmprunts");
+    liste.innerHTML="";
+    livres.forEach((livre,index)=>{
+        if(livre.statut==="Emprunté"){
+            let li=document.createElement("li");
+            li.innerHTML=`
+                <span>${livre.numero} - ${livre.titre}</span>
+                <small>${livre.empruntePar} | Retour prévu: ${livre.retour}</small>
+                <button class="small" onclick="rendreLivre(${index})">Rendre</button>
+            `;
+            liste.appendChild(li);
+        }
+    });
+}
+
+function ajouterLivre(){
+    const num=document.getElementById("numero").value;
+    const titre=document.getElementById("titre").value;
+    const auteur=document.getElementById("auteur").value;
+    const annee=document.getElementById("annee").value;
+    const edition=document.getElementById("edition").value;
+    const langue=document.getElementById("langue").value;
+    const emplacement=document.getElementById("emplacement").value;
+    const code=document.getElementById("code").value;
+
+    if(code!==codeSecret){notifier("Code incorrect !"); return;}
+    if(!num||!titre){notifier("Numéro et titre obligatoires !"); return;}
+
+    livres.push({numero:num,titre:titre,auteur:auteur,annee:annee,edition:edition,langue:langue,emplacement:emplacement,statut:"Disponible",empruntePar:"",retour:""});
+    localStorage.setItem("livres",JSON.stringify(livres));
+    afficherLivres();
+    notifier(`Livre "${titre}" ajouté`);
+
+    document.getElementById("numero").value="";
+    document.getElementById("titre").value="";
+    document.getElementById("auteur").value="";
+    document.getElementById("annee").value="";
+    document.getElementById("edition").value="";
+    document.getElementById("emplacement").value="";
+    document.getElementById("code").value="";
+}
+
+// Emprunt futuriste
+function ouvrirEmprunt(index){
+    const container=document.createElement("div");
+    container.style.position="fixed";
+    container.style.top="50%";
+    container.style.left="50%";
+    container.style.transform="translate(-50%,-50%)";
+    container.style.background="#1c1f27";
+    container.style.padding="20px";
+    container.style.borderRadius="12px";
+    container.style.boxShadow="0 0 20px #00fff7";
+    container.style.zIndex="1000";
+    container.innerHTML=`
+        <h3>Emprunter "${livres[index].titre}"</h3>
+        <label>Nom:</label>
+        <input id="emprunteur" placeholder="Nom de l'emprunteur">
+        <label>Date de retour:</label>
+        <input id="retourDate" type="date">
+        <button id="confirmer">Confirmer</button>
+        <button id="annuler">Annuler</button>
+    `;
+    document.body.appendChild(container);
+
+    document.getElementById("confirmer").onclick=()=>{
+        const nom=document.getElementById("emprunteur").value;
+        const date=document.getElementById("retourDate").value;
+        if(!nom || !date){alert("Nom et date obligatoires"); return;}
+        livres[index].statut="Emprunté";
+        livres[index].empruntePar=nom;
+        livres[index].retour=date;
+        localStorage.setItem("livres",JSON.stringify(livres));
+        afficherLivres();
+        notifier(`Livre "${livres[index].titre}" emprunté par ${nom}`);
+        container.remove();
+    };
+    document.getElementById("annuler").onclick=()=>{container.remove();}
+}
+
+// Rendre livre
+function rendreLivre(index){
+    livres[index].statut="Disponible";
+    livres[index].empruntePar="";
+    livres[index].retour="";
+    localStorage.setItem("livres",JSON.stringify(livres));
+    afficherLivres();
+    notifier(`Livre "${livres[index].titre}" rendu`);
+}
+
+// Popup futuriste pour supprimer
+function popupSupprimer(index){
+    const container=document.createElement("div");
+    container.style.position="fixed";
+    container.style.top="50%";
+    container.style.left="50%";
+    container.style.transform="translate(-50%,-50%)";
+    container.style.background="#1c1f27";
+    container.style.padding="20px";
+    container.style.borderRadius="12px";
+    container.style.boxShadow="0 0 20px #00fff7";
+    container.style.zIndex="1000";
+    container.innerHTML=`
+        <h3>Supprimer "${livres[index].titre}" ?</h3>
+        <button id="confirmer">Supprimer</button>
+        <button id="annuler">Annuler</button>
+    `;
+    document.body.appendChild(container);
+
+    document.getElementById("confirmer").onclick=()=>{
+        let titre=livres[index].titre;
+        livres.splice(index,1);
+        localStorage.setItem("livres",JSON.stringify(livres));
+        afficherLivres();
+        notifier(`Livre "${titre}" supprimé`);
+        container.remove();
+    };
+
+    document.getElementById("annuler").onclick=()=>{ container.remove(); };
+}
+
+// Vérifie les retours dépassés toutes les minutes
+setInterval(()=>{
+    let today=new Date().toISOString().split('T')[0];
+    let misAJour=false;
+    livres.forEach(l=>{
+        if(l.statut==="Emprunté" && l.retour<=today){
+            l.statut="Disponible";
+            l.empruntePar="";
+            l.retour="";
+            misAJour=true;
+        }
+    });
+    if(misAJour){
+        localStorage.setItem("livres",JSON.stringify(livres));
+        afficherLivres();
+        notifier("Livres rendus automatiquement (date dépassée)");
+    }
+},60000);
+
+afficherLivres();
+</script>
+</body>
+</html>

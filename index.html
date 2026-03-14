@@ -9,6 +9,8 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 
 body{
@@ -144,8 +146,6 @@ label{
  margin-top:5px;
 }
 
-/* RESPONSIVE */
-
 @media(max-width:700px){
 
 body{
@@ -184,7 +184,7 @@ li{
 
 <h2 style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAjout()">
 Ajouter un livre
-<span id="flecheAjout">⬆</span>
+<span id="flecheAjout">▲</span>
 </h2>
 
 <div id="zoneAjout">
@@ -203,7 +203,6 @@ Ajouter un livre
 </select>
 
 <input id="emplacement" placeholder="Emplacement (ex: Étagère 2 / Case 3)">
-
 <input id="code" placeholder="Code secret">
 
 <button onclick="ajouterLivre()">Ajouter</button>
@@ -230,11 +229,30 @@ Ajouter un livre
 
 <script>
 
-let livres=JSON.parse(localStorage.getItem("livres"))||[];
+const SUPABASE_URL="https://dihnpkihprrwmpknbkqp.supabase.co";
+const SUPABASE_KEY="sb_publishable_9JF-3zXcuw6zJGqq-SReQw_sF4dlsKL";
+
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let livres=[];
 
 const codeSecret="1215";
 
 let ouvertAjout=true;
+
+async function chargerLivres(){
+
+ const {data,error}=await supabase.from("livres").select("*");
+
+ if(error){
+  console.error(error);
+  return;
+ }
+
+ livres=data||[];
+ afficherLivres();
+
+}
 
 function toggleAjout(){
 
@@ -261,11 +279,7 @@ function notifier(message){
 
  n.style.display="block";
 
- setTimeout(()=>{
-
-  n.style.display="none";
-
- },3000)
+ setTimeout(()=>{n.style.display="none"},3000)
 
 }
 
@@ -282,14 +296,13 @@ function ouvrirTab(id){
 function afficherLivres(){
 
  const liste=document.getElementById("liste");
-
  const filtre=document.getElementById("recherche").value.toLowerCase();
 
  liste.innerHTML="";
 
- livres.forEach((livre,index)=>{
+ livres.forEach(livre=>{
 
-  if(livre.numero.toLowerCase().includes(filtre)||livre.titre.toLowerCase().includes(filtre)||livre.auteur.toLowerCase().includes(filtre)){
+  if(livre.numero?.toLowerCase().includes(filtre)||livre.titre?.toLowerCase().includes(filtre)||livre.auteur?.toLowerCase().includes(filtre)){
 
    let li=document.createElement("li");
 
@@ -305,9 +318,9 @@ function afficherLivres(){
 
    <div class="buttons">
 
-   ${livre.statut==='Disponible'?`<button class="small" onclick="ouvrirEmprunt(${index})">Emprunter</button>`:`<button class="small" onclick="rendreLivre(${index})">Rendre</button>`}
+   ${livre.statut==='Disponible'?`<button class="small" onclick="ouvrirEmprunt(${livre.id})">Emprunter</button>`:`<button class="small" onclick="rendreLivre(${livre.id})">Rendre</button>`}
 
-   <button class="small" onclick="popupSupprimer(${index})">Supprimer</button>
+   <button class="small" onclick="popupSupprimer(${livre.id})">Supprimer</button>
 
    </div>
 
@@ -324,10 +337,9 @@ function afficherLivres(){
 function afficherEmprunts(){
 
  const liste=document.getElementById("listeEmprunts");
-
  liste.innerHTML="";
 
- livres.forEach((livre,index)=>{
+ livres.forEach(livre=>{
 
   if(livre.statut==="Emprunté"){
 
@@ -339,7 +351,7 @@ function afficherEmprunts(){
 
    <small>${livre.empruntePar} | Retour prévu: ${livre.retour}</small>
 
-   <button class="small" onclick="rendreLivre(${index})">Rendre</button>
+   <button class="small" onclick="rendreLivre(${livre.id})">Rendre</button>
 
    `;
 
@@ -351,255 +363,96 @@ function afficherEmprunts(){
 
 }
 
-function ajouterLivre(){
+async function ajouterLivre(){
 
  const num=document.getElementById("numero").value;
-
  const titre=document.getElementById("titre").value;
-
  const auteur=document.getElementById("auteur").value;
-
  const annee=document.getElementById("annee").value;
-
  const edition=document.getElementById("edition").value;
-
  const langue=document.getElementById("langue").value;
-
  const emplacement=document.getElementById("emplacement").value;
-
  const code=document.getElementById("code").value;
 
  if(code!==codeSecret){
-
   notifier("Code incorrect !");
-
   return;
-
  }
 
  if(!num||!titre){
-
   notifier("Numéro et titre obligatoires !");
-
   return;
-
  }
 
- livres.push({
+ await supabase.from("livres").insert([{
 
   numero:num,
-
   titre:titre,
-
   auteur:auteur,
-
   annee:annee,
-
   edition:edition,
-
   langue:langue,
-
   emplacement:emplacement,
-
   statut:"Disponible",
-
   empruntePar:"",
-
   retour:""
 
- })
-
- localStorage.setItem("livres",JSON.stringify(livres));
-
- afficherLivres();
+ }]);
 
  notifier(`Livre "${titre}" ajouté`);
 
- document.querySelectorAll("#zoneAjout input").forEach(i=>i.value="");
+ chargerLivres();
 
 }
 
-function ouvrirEmprunt(index){
+async function rendreLivre(id){
 
- const container=document.createElement("div");
+ await supabase.from("livres").update({
 
- container.style.position="fixed";
+  statut:"Disponible",
+  empruntePar:"",
+  retour:""
 
- container.style.top="50%";
+ }).eq("id",id);
 
- container.style.left="50%";
+ notifier("Livre rendu");
 
- container.style.transform="translate(-50%,-50%)";
-
- container.style.background="#1c1f27";
-
- container.style.padding="20px";
-
- container.style.borderRadius="12px";
-
- container.style.boxShadow="0 0 20px #00fff7";
-
- container.style.zIndex="1000";
-
- container.innerHTML=`
-
- <h3>Emprunter "${livres[index].titre}"</h3>
-
- <label>Nom:</label>
-
- <input id="emprunteur">
-
- <label>Date de retour:</label>
-
- <input id="retourDate" type="date">
-
- <button id="confirmer">Confirmer</button>
-
- <button id="annuler">Annuler</button>
-
- `;
-
- document.body.appendChild(container);
-
- document.getElementById("confirmer").onclick=()=>{
-
-  const nom=document.getElementById("emprunteur").value;
-
-  const date=document.getElementById("retourDate").value;
-
-  if(!nom||!date){
-
-   alert("Nom et date obligatoires");
-
-   return;
-
-  }
-
-  livres[index].statut="Emprunté";
-
-  livres[index].empruntePar=nom;
-
-  livres[index].retour=date;
-
-  localStorage.setItem("livres",JSON.stringify(livres));
-
-  afficherLivres();
-
-  notifier(`Livre "${livres[index].titre}" emprunté par ${nom}`);
-
-  container.remove();
-
- }
-
- document.getElementById("annuler").onclick=()=>container.remove();
+ chargerLivres();
 
 }
 
-function rendreLivre(index){
+async function popupSupprimer(id){
 
- livres[index].statut="Disponible";
+ await supabase.from("livres").delete().eq("id",id);
 
- livres[index].empruntePar="";
+ notifier("Livre supprimé");
 
- livres[index].retour="";
-
- localStorage.setItem("livres",JSON.stringify(livres));
-
- afficherLivres();
-
- notifier(`Livre "${livres[index].titre}" rendu`);
+ chargerLivres();
 
 }
 
-function popupSupprimer(index){
+async function ouvrirEmprunt(id){
 
- const container=document.createElement("div");
+ const nom=prompt("Nom de l'emprunteur");
+ const date=prompt("Date de retour (AAAA-MM-JJ)");
 
- container.style.position="fixed";
+ if(!nom||!date)return;
 
- container.style.top="50%";
+ await supabase.from("livres").update({
 
- container.style.left="50%";
+  statut:"Emprunté",
+  empruntePar:nom,
+  retour:date
 
- container.style.transform="translate(-50%,-50%)";
+ }).eq("id",id);
 
- container.style.background="#1c1f27";
+ notifier("Livre emprunté");
 
- container.style.padding="20px";
-
- container.style.borderRadius="12px";
-
- container.style.boxShadow="0 0 20px #00fff7";
-
- container.style.zIndex="1000";
-
- container.innerHTML=`
-
- <h3>Supprimer "${livres[index].titre}" ?</h3>
-
- <button id="confirmer">Supprimer</button>
-
- <button id="annuler">Annuler</button>
-
- `;
-
- document.body.appendChild(container);
-
- document.getElementById("confirmer").onclick=()=>{
-
-  let titre=livres[index].titre;
-
-  livres.splice(index,1);
-
-  localStorage.setItem("livres",JSON.stringify(livres));
-
-  afficherLivres();
-
-  notifier(`Livre "${titre}" supprimé`);
-
-  container.remove();
-
- }
-
- document.getElementById("annuler").onclick=()=>container.remove();
+ chargerLivres();
 
 }
 
-setInterval(()=>{
-
- let today=new Date().toISOString().split('T')[0];
-
- let maj=false;
-
- livres.forEach(l=>{
-
-  if(l.statut==="Emprunté"&&l.retour<=today){
-
-   l.statut="Disponible";
-
-   l.empruntePar="";
-
-   l.retour="";
-
-   maj=true;
-
-  }
-
- })
-
- if(maj){
-
-  localStorage.setItem("livres",JSON.stringify(livres));
-
-  afficherLivres();
-
-  notifier("Livres rendus automatiquement");
-
- }
-
-},60000);
-
-afficherLivres();
+chargerLivres();
 
 </script>
 

@@ -424,7 +424,7 @@ async function rendreLivre(id){
 
 async function popupSupprimer(id){
 
- await supabase.from("livres").delete().eq("id",id);
+ await client.from("livres").delete().eq("id",id);
 
  notifier("Livre supprimé");
 
@@ -439,7 +439,7 @@ async function ouvrirEmprunt(id){
 
  if(!nom||!date)return;
 
- await supabase.from("livres").update({
+ await client.from("livres").update({
 
   statut:"Emprunté",
   empruntePar:nom,

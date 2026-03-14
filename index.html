@@ -1,261 +1,459 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bibliothèque IVA</title>
+<title>Bibliothèque Futuriste 5.0</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 
 body{
-font-family:Arial;
-background:#0f172a;
-color:white;
-max-width:800px;
-margin:auto;
-padding:20px;
+ font-family:'Orbitron',sans-serif;
+ background:linear-gradient(135deg,#0b0c10,#1f2833);
+ color:#c5c6c7;
+ padding:20px;
+ max-width:800px;
+ margin:auto;
 }
 
 h1{
-text-align:center;
+ text-align:center;
+ color:#00fff7;
+ letter-spacing:2px;
+ margin-bottom:20px;
 }
 
 input,select,button{
-width:100%;
-padding:10px;
-margin:5px 0;
-border-radius:6px;
-border:none;
+ margin:5px 0;
+ padding:8px;
+ width:100%;
+ border:none;
+ border-radius:8px;
+ outline:none;
+ background:#1c1f27;
+ color:#c5c6c7;
+ font-size:1em;
 }
 
 button{
-background:#22c55e;
-color:white;
-cursor:pointer;
+ background:#00fff7;
+ color:#0b0c10;
+ font-weight:bold;
+ cursor:pointer;
+ transition:0.3s;
 }
 
 button:hover{
-background:#16a34a;
+ background:#00c0b0;
+ color:#fff;
+}
+
+ul{
+ padding:0;
 }
 
 li{
-background:#1e293b;
-margin:10px 0;
-padding:15px;
-border-radius:8px;
-list-style:none;
+ background:#1c1f27;
+ margin:8px 0;
+ padding:15px;
+ border-radius:12px;
+ display:flex;
+ flex-direction:column;
+ box-shadow:0 0 15px #00fff7;
 }
 
-.small{
-width:auto;
-margin-right:5px;
-padding:5px 10px;
+li span{
+ font-weight:bold;
 }
 
-.dispo{
-color:#22c55e;
-font-weight:bold;
+li .buttons{
+ margin-top:8px;
+ display:flex;
+ flex-wrap:wrap;
+}
+
+li button.small{
+ width:auto;
+ margin:5px 5px 0 0;
+ padding:5px 10px;
+ font-size:0.9em;
+ border-radius:6px;
+}
+
+.disponible{
+ color:#0ff;
+ font-weight:bold;
 }
 
 .emprunte{
-color:#ef4444;
-font-weight:bold;
+ color:#f00;
+ font-weight:bold;
+}
+
+#notif{
+ position:fixed;
+ top:20px;
+ right:20px;
+ background:rgba(0,255,255,0.2);
+ backdrop-filter:blur(10px);
+ color:#00fff7;
+ padding:15px 20px;
+ border-radius:12px;
+ box-shadow:0 0 20px #00fff7;
+ display:none;
+ font-weight:bold;
+ animation:fadein 0.5s,fadeout 0.5s 2.5s;
+ z-index:999;
+}
+
+@keyframes fadein{
+ from{opacity:0}
+ to{opacity:1}
+}
+
+@keyframes fadeout{
+ from{opacity:1}
+ to{opacity:0}
+}
+
+.tab{
+ display:none;
+}
+
+.tab-buttons{
+ display:flex;
+ justify-content:center;
+ margin-bottom:15px;
+ flex-wrap:wrap;
+}
+
+.tab-buttons button{
+ width:auto;
+ margin:5px;
+}
+
+.tab-active{
+ display:block;
+}
+
+label{
+ margin-top:5px;
+}
+
+@media(max-width:700px){
+
+body{
+ padding:10px;
+}
+
+h1{
+ font-size:1.6em;
+}
+
+input,select,button{
+ font-size:0.9em;
+}
+
+li{
+ padding:12px;
+}
+
 }
 
 </style>
-
 </head>
 
 <body>
 
 <h1>Bibliothèque IVA</h1>
 
-<h2>Ajouter un livre</h2>
+<div id="notif"></div>
+
+<div class="tab-buttons">
+<button onclick="ouvrirTab('bibliotheque')">Bibliothèque</button>
+<button onclick="ouvrirTab('emprunts')">Emprunts</button>
+</div>
+
+<div id="bibliotheque" class="tab tab-active">
+
+<h2 style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAjout()">
+Ajouter un livre
+<span id="flecheAjout">▲</span>
+</h2>
+
+<div id="zoneAjout">
 
 <input id="numero" placeholder="Numéro">
-<input id="titre" placeholder="Titre">
+<input id="titre" placeholder="Nom du livre">
 <input id="auteur" placeholder="Auteur">
 <input id="annee" placeholder="Année">
-<input id="edition" placeholder="Edition">
-<input id="langue" placeholder="Langue">
-<input id="emplacement" placeholder="Emplacement">
+<input id="edition" placeholder="Édition">
+
+<select id="langue">
+<option>Français</option>
+<option>Russe</option>
+<option>Anglais</option>
+<option>Autre</option>
+</select>
+
+<input id="emplacement" placeholder="Emplacement (ex: Étagère 2 / Case 3)">
 <input id="code" placeholder="Code secret">
 
 <button onclick="ajouterLivre()">Ajouter</button>
 
-<h2>Recherche</h2>
+</div>
 
-<input id="recherche" placeholder="Titre ou auteur" oninput="afficherLivres()">
+<h2>Rechercher un livre</h2>
+
+<input id="recherche" placeholder="Numéro, titre ou auteur" oninput="afficherLivres()">
 
 <h2>Livres</h2>
 
 <ul id="liste"></ul>
 
+</div>
+
+<div id="emprunts" class="tab">
+
+<h2>Historique des emprunts</h2>
+
+<ul id="listeEmprunts"></ul>
+
+</div>
+
 <script>
 
-const SUPABASE_URL="https://dihnpkihprrwmpknbkqp.supabase.co"
-const SUPABASE_KEY="sb_publishable_9JF-3zXcuw6zJGqq-SReQw_sF4dlsKL"
+const SUPABASE_URL="https://dihnpkihprrwmpknbkqp.supabase.co";
+const SUPABASE_KEY="sb_publishable_9JF-3zXcuw6zJGqq-SReQw_sF4dlsKL";
 
-const { createClient } = supabase
-const db = createClient(SUPABASE_URL,SUPABASE_KEY)
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let livres=[]
-const codeSecret="1215"
+let livres=[];
+
+const codeSecret="1215";
+
+let ouvertAjout=true;
 
 async function chargerLivres(){
 
-const { data, error } = await db
-.from("livres")
-.select("*")
-.order("id",{ascending:true})
+ const {data,error}=await client.from("livres").select("*");
 
-if(error){
-console.error(error)
-return
+ if(error){
+  console.error(error);
+  return;
+ }
+
+ livres=data||[];
+ afficherLivres();
+
 }
 
-livres=data
-afficherLivres()
+function toggleAjout(){
+
+ const zone=document.getElementById("zoneAjout");
+ const fleche=document.getElementById("flecheAjout");
+
+ ouvertAjout=!ouvertAjout;
+
+ if(ouvertAjout){
+  zone.style.display="block";
+  fleche.textContent="▲";
+ }else{
+  zone.style.display="none";
+  fleche.textContent="▼";
+ }
+
+}
+
+function notifier(message){
+
+ const n=document.getElementById("notif");
+
+ n.textContent=message;
+
+ n.style.display="block";
+
+ setTimeout(()=>{n.style.display="none"},3000)
+
+}
+
+function ouvrirTab(id){
+
+ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));
+
+ document.getElementById(id).classList.add('tab-active');
+
+ if(id==='emprunts')afficherEmprunts();
 
 }
 
 function afficherLivres(){
 
-const liste=document.getElementById("liste")
-const filtre=document.getElementById("recherche").value.toLowerCase()
+ const liste=document.getElementById("liste");
+ const filtre=document.getElementById("recherche").value.toLowerCase();
 
-liste.innerHTML=""
+ liste.innerHTML="";
 
-livres.forEach(livre=>{
+ livres.forEach(livre=>{
 
-if(
-livre.titre?.toLowerCase().includes(filtre) ||
-livre.auteur?.toLowerCase().includes(filtre) ||
-livre.numero?.toLowerCase().includes(filtre)
-){
+  if(livre.numero?.toLowerCase().includes(filtre)||livre.titre?.toLowerCase().includes(filtre)||livre.auteur?.toLowerCase().includes(filtre)){
 
-let li=document.createElement("li")
+   let li=document.createElement("li");
 
-li.innerHTML=`
+   li.innerHTML=`
 
-<b>${livre.numero} - ${livre.titre}</b><br>
-${livre.auteur} | ${livre.annee} | ${livre.edition}<br>
-Langue: ${livre.langue}<br>
-Emplacement: ${livre.emplacement}<br>
+   <span>${livre.numero} - ${livre.titre}</span>
 
-<span class="${livre.statut==='Disponible'?'dispo':'emprunte'}">
-${livre.statut}
-</span>
+   <small>${livre.auteur}, ${livre.annee}, ${livre.edition}</small>
 
-<br><br>
+   <small>Langue: ${livre.langue} | Emplacement: ${livre.emplacement}</small>
 
-${livre.statut==="Disponible"
-?`<button class="small" onclick="emprunter(${livre.id})">Emprunter</button>`
-:`<button class="small" onclick="rendre(${livre.id})">Rendre</button>`
-}
+   <span class="${livre.statut==='Disponible'?'disponible':'emprunte'}">${livre.statut}</span>
 
-<button class="small" onclick="supprimer(${livre.id})">Supprimer</button>
+   <div class="buttons">
 
-`
+   ${livre.statut==='Disponible'?`<button class="small" onclick="ouvrirEmprunt(${livre.id})">Emprunter</button>`:`<button class="small" onclick="rendreLivre(${livre.id})">Rendre</button>`}
 
-liste.appendChild(li)
+   <button class="small" onclick="popupSupprimer(${livre.id})">Supprimer</button>
+
+   </div>
+
+   `;
+
+   liste.appendChild(li);
+
+  }
+
+ })
 
 }
 
-})
+function afficherEmprunts(){
+
+ const liste=document.getElementById("listeEmprunts");
+ liste.innerHTML="";
+
+ livres.forEach(livre=>{
+
+  if(livre.statut==="Emprunté"){
+
+   let li=document.createElement("li");
+
+   li.innerHTML=`
+
+   <span>${livre.numero} - ${livre.titre}</span>
+
+   <small>${livre.empruntePar} | Retour prévu: ${livre.retour}</small>
+
+   <button class="small" onclick="rendreLivre(${livre.id})">Rendre</button>
+
+   `;
+
+   liste.appendChild(li);
+
+  }
+
+ })
 
 }
 
 async function ajouterLivre(){
 
-const num=document.getElementById("numero").value
-const titre=document.getElementById("titre").value
-const auteur=document.getElementById("auteur").value
-const annee=document.getElementById("annee").value
-const edition=document.getElementById("edition").value
-const langue=document.getElementById("langue").value
-const emplacement=document.getElementById("emplacement").value
-const code=document.getElementById("code").value
+ const num=document.getElementById("numero").value;
+ const titre=document.getElementById("titre").value;
+ const auteur=document.getElementById("auteur").value;
+ const annee=document.getElementById("annee").value;
+ const edition=document.getElementById("edition").value;
+ const langue=document.getElementById("langue").value;
+ const emplacement=document.getElementById("emplacement").value;
+ const code=document.getElementById("code").value;
 
-if(code!==codeSecret){
-alert("Code incorrect")
-return
-}
+ if(code!==codeSecret){
+  notifier("Code incorrect !");
+  return;
+ }
 
-await db.from("livres").insert([{
+ if(!num||!titre){
+  notifier("Numéro et titre obligatoires !");
+  return;
+ }
 
-numero:num,
-titre:titre,
-auteur:auteur,
-annee:annee,
-edition:edition,
-langue:langue,
-emplacement:emplacement,
-statut:"Disponible",
-empruntePar:"",
-retour:""
+ await client.from("livres").insert([{
 
-}])
+  numéro:num,
+  titre:titre,
+  auteur:auteur,
+  année:annee,
+  édition:edition,
+  langue:langue,
+  emplacement:emplacement,
+  statut:"Disponible",
+  empruntePar:"",
+  retour:""
 
-chargerLivres()
+ }]);
 
-}
+ notifier(`Livre "${titre}" ajouté`);
 
-async function emprunter(id){
-
-const nom=prompt("Nom de l'emprunteur")
-const date=prompt("Date de retour (AAAA-MM-JJ)")
-
-if(!nom||!date) return
-
-await db.from("livres")
-.update({
-
-statut:"Emprunté",
-empruntePar:nom,
-retour:date
-
-})
-.eq("id",id)
-
-chargerLivres()
+ chargerLivres();
 
 }
 
-async function rendre(id){
+async function rendreLivre(id){
 
-await db.from("livres")
-.update({
+ await client.from("livres").update({
 
-statut:"Disponible",
-empruntePar:"",
-retour:""
+  statut:"Disponible",
+  empruntePar:"",
+  retour:""
 
-})
-.eq("id",id)
+ }).eq("id",id);
 
-chargerLivres()
+ notifier("Livre rendu");
 
-}
-
-async function supprimer(id){
-
-if(!confirm("Supprimer ce livre ?")) return
-
-await db.from("livres")
-.delete()
-.eq("id",id)
-
-chargerLivres()
+ chargerLivres();
 
 }
 
-chargerLivres()
+async function popupSupprimer(id){
+
+ await supabase.from("livres").delete().eq("id",id);
+
+ notifier("Livre supprimé");
+
+ chargerLivres();
+
+}
+
+async function ouvrirEmprunt(id){
+
+ const nom=prompt("Nom de l'emprunteur");
+ const date=prompt("Date de retour (AAAA-MM-JJ)");
+
+ if(!nom||!date)return;
+
+ await supabase.from("livres").update({
+
+  statut:"Emprunté",
+  empruntePar:nom,
+  retour:date
+
+ }).eq("id",id);
+
+ notifier("Livre emprunté");
+
+ chargerLivres();
+
+}
+
+chargerLivres();
 
 </script>
 

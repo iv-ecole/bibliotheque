@@ -275,16 +275,20 @@ function toggleAjout(){
 function notifier(message){
   const n = document.getElementById("notif");
 
+  // Mise à jour du contenu du message
   n.textContent = message;
 
+  // Affichage du message avec l'animation de fadein
   n.style.display = "block";
-  n.classList.add("fadein");  // Ajout d'une animation
+  n.classList.add("fadein");  
   n.classList.remove("fadeout");
 
+  // Animation pour faire disparaître le message après 2.5 secondes
   setTimeout(() => {
     n.classList.add("fadeout");
-  }, 2500);  // Le message disparaît après 3 secondes
+  }, 2500); 
 
+  // Après 3 secondes, on cache et réinitialise les classes pour l'animation
   setTimeout(() => {
     n.style.display = "none";
     n.classList.remove("fadein", "fadeout");

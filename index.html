@@ -202,7 +202,7 @@ li{
 <body>
 
 <h1>Bibliothèque IVA</h1>
- <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.1</p>
+ <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.0</p>
 
 <div id="notif"></div>
 
@@ -302,27 +302,26 @@ function toggleAjout(){
 
 }
 
-function notifier(message){
-  const n = document.getElementById("notif");
+function notifier(message) {
+  const notifElement = document.getElementById("notif");
 
-  // Mise à jour du contenu du message
-  n.textContent = message;
+  // Ajouter le message à la notification
+  notifElement.textContent = message;
 
-  // Affichage du message avec l'animation de fadein
-  n.style.display = "block";
-  n.classList.add("fadein");  
-  n.classList.remove("fadeout");
+  // Afficher la notification avec l'animation d'apparition
+  notifElement.style.display = "block";
+  notifElement.classList.remove("fadeout");
+  notifElement.classList.add("fadein");
 
-  // Animation pour faire disparaître le message après 2.5 secondes
+  // Masquer la notification après 3 secondes
   setTimeout(() => {
-    n.classList.add("fadeout");
-  }, 2500); 
+    notifElement.classList.add("fadeout");
+  }, 2500);  // Le message disparaît après 2.5 secondes
 
-  // Après 3 secondes, on cache et réinitialise les classes pour l'animation
   setTimeout(() => {
-    n.style.display = "none";
-    n.classList.remove("fadein", "fadeout");
-  }, 3000);
+    notifElement.style.display = "none";
+    notifElement.classList.remove("fadein", "fadeout");
+  }, 3000);  // Cache après 3 secondes
 }
 
 function ouvrirTab(id){

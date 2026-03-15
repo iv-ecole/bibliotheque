@@ -385,20 +385,21 @@ async function ajouterLivre(){
   return;
  }
 
- const { data, error } = await client.from("livres").insert([{
-
- numero:num,
- titre:titre,
- auteur:auteur,
- annee:annee,
- edition:edition,
- langue:langue,
- emplacement:emplacement,
- statut:"Disponible",
- empruntePar:"",
- retour:""
-
-}]);
+ const { data, error } = await client
+.from("livres")
+.insert({
+ numero: num,
+ titre: titre,
+ auteur: auteur || null,
+ annee: annee || null,
+ edition: edition || null,
+ langue: langue || null,
+ emplacement: emplacement || null,
+ statut: "Disponible",
+ empruntePar: null,
+ retour: null
+})
+.select();
 
 if(error){
  console.error("ERREUR SUPABASE:", error);

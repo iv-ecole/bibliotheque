@@ -387,7 +387,7 @@ async function ajouterLivre(){
 
  const { data, error } = await client
 .from("livres")
-.insert({
+.insert([{
  numero: num,
  titre: titre,
  auteur: auteur || null,
@@ -398,7 +398,7 @@ async function ajouterLivre(){
  statut: "Disponible",
  empruntePar: null,
  retour: null
-})
+}])
 .select();
 
 if(error){

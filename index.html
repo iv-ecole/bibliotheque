@@ -426,19 +426,31 @@ console.log("Livre ajouté:", data);
 }
 
 async function rendreLivre(id){
+  // Log pour vérifier l'ID du livre
+  console.log(`Rendre le livre avec ID: ${id}`);
 
- await client.from("livres").update({
+  // Mise à jour du statut du livre en "Disponible"
+  const { data, error } = await client
+    .from("livres")
+    .update({
+      statut: "Disponible",
+      empruntePar: null,
+      retour: null
+    })
+    .eq("id", id);
 
-  statut:"Disponible",
-  empruntePar:"",
-  retour:""
+  // Vérification de l'erreur
+  if (error) {
+    console.error("Erreur lors de la mise à jour du statut:", error);
+    notifier("Erreur lors du retour du livre !");
+    return;
+  }
 
- }).eq("id",id);
+  console.log("Livre rendu:", data);
 
- notifier("Livre rendu");
-
- chargerLivres();
-
+  // Notification et mise à jour de l'interface
+  notifier("Livre rendu avec succès !");
+  chargerLivres();
 }
 
 async function popupSupprimer(id){

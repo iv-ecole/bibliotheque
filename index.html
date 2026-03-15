@@ -272,15 +272,22 @@ function toggleAjout(){
 }
 
 function notifier(message){
+  const n = document.getElementById("notif");
 
- const n=document.getElementById("notif");
+  n.textContent = message;
 
- n.textContent=message;
+  n.style.display = "block";
+  n.classList.add("fadein");  // Ajout d'une animation
+  n.classList.remove("fadeout");
 
- n.style.display="block";
+  setTimeout(() => {
+    n.classList.add("fadeout");
+  }, 2500);  // Le message disparaît après 3 secondes
 
- setTimeout(()=>{n.style.display="none"},3000)
-
+  setTimeout(() => {
+    n.style.display = "none";
+    n.classList.remove("fadein", "fadeout");
+  }, 3000);
 }
 
 function ouvrirTab(id){

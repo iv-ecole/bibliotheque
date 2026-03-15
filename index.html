@@ -303,7 +303,11 @@ function afficherLivres(){
 
  livres.forEach(livre=>{
 
-  if(livre.numero?.toLowerCase().includes(filtre)||livre.titre?.toLowerCase().includes(filtre)||livre.auteur?.toLowerCase().includes(filtre)){
+  if(
+ String(livre.numero).toLowerCase().includes(filtre) ||
+ (livre.titre && livre.titre.toLowerCase().includes(filtre)) ||
+ (livre.auteur && livre.auteur.toLowerCase().includes(filtre))
+){
 
    let li=document.createElement("li");
 

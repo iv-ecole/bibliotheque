@@ -198,7 +198,7 @@ li{
 <body>
 
 <h1>Bibliothèque IVA</h1>
- <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.1</p>
+ <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.2</p>
  
 <div id="notif"></div>
 
@@ -496,23 +496,51 @@ async function popupSupprimer(id){
 
 async function ouvrirEmprunt(id){
 
- const nom=prompt("Nom de l'emprunteur");
- const date=prompt("Date de retour (AAAA-MM-JJ)");
+ const popup = document.createElement("div");
 
- if(!nom||!date)return;
+ popup.style.position="fixed";
+ popup.style.top="50%";
+ popup.style.left="50%";
+ popup.style.transform="translate(-50%,-50%)";
+ popup.style.background="#1c1f27";
+ popup.style.padding="20px";
+ popup.style.borderRadius="12px";
+ popup.style.boxShadow="0 0 20px #00fff7";
+ popup.style.zIndex="1000";
 
- await client.from("livres").update({
+ popup.innerHTML=`
+ <h3 style="color:#00fff7;">Emprunter un livre</h3>
 
-  statut:"Emprunté",
-  empruntePar:nom,
-  retour:date
+ <label>Date de retour :</label>
+ <input id="dateRetour" type="date">
 
- }).eq("id",id);
+ <button id="valider">Valider</button>
+ <button id="annuler">Annuler</button>
+ `;
 
- notifier("Livre emprunté");
+ document.body.appendChild(popup);
 
- chargerLivres();
+ document.getElementById("valider").onclick = async () => {
 
+  const date = document.getElementById("dateRetour").value;
+
+  if(!date){
+   notifier("Date obligatoire !");
+   return;
+  }
+
+  await client.from("livres").update({
+   statut:"Emprunté",
+   empruntePar: utilisateurActuel,
+   retour: date
+  }).eq("id",id);
+
+  notifier("Livre emprunté !");
+  popup.remove();
+  chargerLivres();
+ };
+
+ document.getElementById("annuler").onclick = () => popup.remove();
 }
 
 chargerLivres();

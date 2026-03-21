@@ -554,7 +554,7 @@ async function ouvrirEmprunt(id){
    return;
   }
 
-  notifier(`📚 ${livre.titre} emprunté par ${nom}`);
+  notifier(`${livre.titre} emprunté par ${nom}`);
 
   popup.remove();
   chargerLivres();

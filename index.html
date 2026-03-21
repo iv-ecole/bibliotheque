@@ -198,7 +198,7 @@ li{
 <body>
 
 <h1>Bibliothèque IVA</h1>
- <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.2</p>
+ <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.3</p>
  
 <div id="notif"></div>
 
@@ -244,7 +244,7 @@ Ajouter un livre
 
 <ul id="liste"></ul>
 
-  <p style="text-align: right; color: #aaa; font-size: 0.8em;">Dernière MàJ le 15/03/2026 à 19:36</p>
+  <p style="text-align: right; color: #aaa; font-size: 0.8em;">Dernière MàJ le 21/03/2026 à 09:52</p>
 
 </div>
 
@@ -496,6 +496,8 @@ async function popupSupprimer(id){
 
 async function ouvrirEmprunt(id){
 
+ const livre = livres.find(l => l.id === id);
+
  const popup = document.createElement("div");
 
  popup.style.position="fixed";
@@ -507,9 +509,13 @@ async function ouvrirEmprunt(id){
  popup.style.borderRadius="12px";
  popup.style.boxShadow="0 0 20px #00fff7";
  popup.style.zIndex="1000";
+ popup.style.width="300px";
 
  popup.innerHTML=`
- <h3 style="color:#00fff7;">Emprunter un livre</h3>
+ <h3 style="color:#00fff7;">Emprunter "${livre.titre}"</h3>
+
+ <label>Nom :</label>
+ <input id="nomEmprunteur">
 
  <label>Date de retour :</label>
  <input id="dateRetour" type="date">
@@ -520,27 +526,41 @@ async function ouvrirEmprunt(id){
 
  document.body.appendChild(popup);
 
- document.getElementById("valider").onclick = async () => {
+ const btnValider = popup.querySelector("#valider");
+ const btnAnnuler = popup.querySelector("#annuler");
 
-  const date = document.getElementById("dateRetour").value;
+ btnValider.onclick = async () => {
 
-  if(!date){
-   notifier("Date obligatoire !");
+  const nom = popup.querySelector("#nomEmprunteur").value.trim();
+  const date = popup.querySelector("#dateRetour").value;
+
+  if(!nom || !date){
+   notifier("Remplis tous les champs !");
    return;
   }
 
-  await client.from("livres").update({
+  btnValider.disabled = true;
+
+  const { error } = await client.from("livres").update({
    statut:"Emprunté",
-   empruntePar: utilisateurActuel,
+   empruntePar: nom,
    retour: date
   }).eq("id",id);
 
-  notifier("Livre emprunté !");
+  if(error){
+   console.error(error);
+   notifier("Erreur !");
+   btnValider.disabled = false;
+   return;
+  }
+
+  notifier(`📚 ${livre.titre} emprunté par ${nom}`);
+
   popup.remove();
   chargerLivres();
  };
 
- document.getElementById("annuler").onclick = () => popup.remove();
+ btnAnnuler.onclick = () => popup.remove();
 }
 
 chargerLivres();

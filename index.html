@@ -204,7 +204,7 @@ li{
 <body>
 
 <h1>Bibliothèque IVA</h1>
- <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.3</p>
+ <p style="text-align: right; color: #aaa; font-size: 0.8em;">Version 1.4</p>
  
 <div id="notif"></div>
 
@@ -277,7 +277,10 @@ let ouvertAjout=true;
 
 async function chargerLivres(){
 
- const {data,error}=await client.from("livres").select("*");
+ const {data,error}=await client
+  .from("livres")
+  .select("*")
+  .order("numero",{ascending:true});
 
  if(error){
   console.error(error);
@@ -285,6 +288,10 @@ async function chargerLivres(){
  }
 
  livres=data||[];
+
+ // sécurité tri parfait même si texte
+ livres.sort((a,b)=>Number(a.numero)-Number(b.numero));
+
  afficherLivres();
 
 }
